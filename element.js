@@ -11,7 +11,6 @@
 }
 .btn:hover{ transform:translateY(-1px); filter:brightness(.95); }
 .btn:active{ transform:translateY(0); filter:brightness(.9); }
-;
   class X extends HTMLElement{
     static get observedAttributes(){return["testimonials","autoplay","class"];}
     constructor(){
