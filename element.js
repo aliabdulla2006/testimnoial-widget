@@ -1,16 +1,32 @@
-// element.js — Pure Web Component with stacked/layered cards (compact, no external libs)
+// element.js — Pure Web Component with stacked cards (no external libs) + purple arrows
 (function(){
-  const css=`:host{display:block}.wrap{max-width:64rem;margin:0 auto;padding:5rem 1.25rem;box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";color:#0a0a0a}.grid{display:grid;grid-template-columns:1fr;gap:5rem}@media(min-width:768px){.grid{grid-template-columns:1fr 1fr}}.stage{position:relative;width:100%;height:24rem;overflow:visible}.card{position:absolute;inset:0;border-radius:1.25rem;opacity:0;transform:translateY(20px) scale(.96) rotate(0);transition:opacity .35s ease,transform .35s ease,filter .35s ease;box-shadow:0 20px 50px rgba(0,0,0,.2);will-change:transform,opacity,filter}.card img{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:1.25rem;-webkit-user-drag:none}.card[data-pos="0"]{opacity:1;transform:translate(0,0) scale(1) rotate(0);z-index:50;filter:none}.card[data-pos="-1"]{opacity:.95;transform:translate(-18px,12px) scale(.96) rotate(-5deg);z-index:40;filter:saturate(.95) brightness(.98)}.card[data-pos="1"]{opacity:.95;transform:translate(18px,12px) scale(.96) rotate(5deg);z-index:40;filter:saturate(.95) brightness(.98)}.card[data-pos="-2"]{opacity:.75;transform:translate(-32px,24px) scale(.92) rotate(-8deg);z-index:30;filter:grayscale(.05) brightness(.96)}.card[data-pos="2"]{opacity:.75;transform:translate(32px,24px) scale(.92) rotate(8deg);z-index:30;filter:grayscale(.05) brightness(.96)}.card[data-pos="out"]{opacity:0;transform:translateY(30px) scale(.9);z-index:10}.h3{font-size:1.5rem;font-weight:800;margin:0;color:#0a0a0a}.designation{font-size:.875rem;color:#666;margin-top:.25rem}.quote{font-size:1.125rem;color:#555;margin-top:2rem;line-height:1.6}.controls{display:flex;gap:.75rem;padding-top:2rem}.btn{
-  width:2rem;height:2rem;border-radius:9999px;
-  background:#A78BFA;            /* lavender circle */
-  color:#fff;                     /* white arrows */
-  display:inline-flex;align-items:center;justify-content:center;
-  border:none;cursor:pointer;font-weight:700;user-select:none;
-  transition:transform .15s ease, filter .15s ease, background .15s ease;
-  box-shadow:0 6px 16px rgba(167,139,250,.35);
-}
-.btn:hover{ transform:translateY(-1px); filter:brightness(.95); }
-.btn:active{ transform:translateY(0); filter:brightness(.9); }
+  const css=`:host{display:block}
+  .wrap{max-width:64rem;margin:0 auto;padding:5rem 1.25rem;box-sizing:border-box;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";color:#0a0a0a}
+  .grid{display:grid;grid-template-columns:1fr;gap:5rem}
+  @media(min-width:768px){.grid{grid-template-columns:1fr 1fr}}
+  .stage{position:relative;width:100%;height:24rem;overflow:visible}
+  .card{position:absolute;inset:0;border-radius:1.25rem;opacity:0;transform:translateY(20px) scale(.96) rotate(0);
+    transition:opacity .35s ease,transform .35s ease,filter .35s ease;box-shadow:0 20px 50px rgba(0,0,0,.2);will-change:transform,opacity,filter}
+  .card img{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:1.25rem;-webkit-user-drag:none}
+  /* stacked positions */
+  .card[data-pos="0"]{opacity:1;transform:translate(0,0) scale(1) rotate(0);z-index:50;filter:none}
+  .card[data-pos="-1"]{opacity:.95;transform:translate(-18px,12px) scale(.96) rotate(-5deg);z-index:40;filter:saturate(.95) brightness(.98)}
+  .card[data-pos="1"]{opacity:.95;transform:translate(18px,12px) scale(.96) rotate(5deg);z-index:40;filter:saturate(.95) brightness(.98)}
+  .card[data-pos="-2"]{opacity:.75;transform:translate(-32px,24px) scale(.92) rotate(-8deg);z-index:30;filter:grayscale(.05) brightness(.96)}
+  .card[data-pos="2"]{opacity:.75;transform:translate(32px,24px) scale(.92) rotate(8deg);z-index:30;filter:grayscale(.05) brightness(.96)}
+  .card[data-pos="out"]{opacity:0;transform:translateY(30px) scale(.9);z-index:10}
+  .h3{font-size:1.5rem;font-weight:800;margin:0;color:#0a0a0a}
+  .designation{font-size:.875rem;color:#666;margin-top:.25rem}
+  .quote{font-size:1.125rem;color:#555;margin-top:2rem;line-height:1.6}
+  .controls{display:flex;gap:.75rem;padding-top:2rem}
+  /* your requested arrow style */
+  .btn{width:2rem;height:2rem;border-radius:9999px;background:#A78BFA;color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;font-weight:700;user-select:none;
+    transition:transform .15s ease,filter .15s ease,background .15s ease;box-shadow:0 6px 16px rgba(167,139,250,.35)}
+  .btn:hover{transform:translateY(-1px);filter:brightness(.95)}
+  .btn:active{transform:translateY(0);filter:brightness(.9)}`;
+
   class X extends HTMLElement{
     static get observedAttributes(){return["testimonials","autoplay","class"];}
     constructor(){
@@ -28,12 +44,8 @@
             <button class="btn" id="next" aria-label="Next">▶</button>
           </div>
         </div></div>`;
-      this._els={
-        stage:this._wrap.querySelector("#stage"),
-        text:this._wrap.querySelector("#text"),
-        prev:this._wrap.querySelector("#prev"),
-        next:this._wrap.querySelector("#next")
-      };
+      this._els={stage:this._wrap.querySelector("#stage"),text:this._wrap.querySelector("#text"),
+                 prev:this._wrap.querySelector("#prev"),next:this._wrap.querySelector("#next")};
       this._els.prev.addEventListener("click",()=>this._prev());
       this._els.next.addEventListener("click",()=>this._next());
     }
@@ -75,22 +87,14 @@
     }
     _stack(n){
       for(let i=0;i<this._cards.length;i++){
-        let d=i-this._active;
-        if(d>n/2)d-=n; if(d<-n/2)d+=n;
-        const pos=(d>=-2&&d<=2)?String(d):"out";
-        this._cards[i].setAttribute("data-pos",pos);
+        let d=i-this._active; if(d>n/2)d-=n; if(d<-n/2)d+=n;
+        this._cards[i].setAttribute("data-pos",(d>=-2&&d<=2)?String(d):"out");
       }
     }
-    _next(){
-      const {testimonials}=this._data(); if(!testimonials.length)return;
-      this._active=(this._active+1)%testimonials.length;
-      this._applyText(testimonials[this._active]); this._stack(testimonials.length);
-    }
-    _prev(){
-      const {testimonials}=this._data(); if(!testimonials.length)return;
-      this._active=(this._active-1+testimonials.length)%testimonials.length;
-      this._applyText(testimonials[this._active]); this._stack(testimonials.length);
-    }
+    _next(){ const {testimonials}=this._data(); if(!testimonials.length)return;
+      this._active=(this._active+1)%testimonials.length; this._applyText(testimonials[this._active]); this._stack(testimonials.length); }
+    _prev(){ const {testimonials}=this._data(); if(!testimonials.length)return;
+      this._active=(this._active-1+testimonials.length)%testimonials.length; this._applyText(testimonials[this._active]); this._stack(testimonials.length); }
     _stop(){ if(this._timer){clearInterval(this._timer); this._timer=null;} }
   }
   function h(s){return String(s).replace(/[&<>"']/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));}
