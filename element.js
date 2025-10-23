@@ -1,170 +1,166 @@
-// public/element.js — UMD/Script-tag version (no ESM imports, no build needed)
+// element.js — Pure Web Component version (no React/FramerMotion/CDNs)
 (function () {
-  // 1) Load UMD scripts once
-  const loadScript = (src) =>
-    new Promise((res, rej) => {
-      if ([...document.scripts].some(s => s.src === src)) return res();
-      const s = document.createElement('script');
-      s.src = src; s.async = true; s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
+  const css = `
+    :host{display:block}
+    .wrap{max-width:64rem;margin:0 auto;padding:5rem 1.25rem;box-sizing:border-box;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";color:#0a0a0a}
+    .grid{display:grid;grid-template-columns:1fr;gap:5rem}
+    @media(min-width:768px){.grid{grid-template-columns:1fr 1fr}}
+    .stage{position:relative;width:100%;height:20rem;overflow:hidden}
+    .card{position:absolute;inset:0;border-radius:1.5rem;opacity:0;transform:translateY(20px) scale(.98);
+      transition:opacity .45s ease, transform .45s ease}
+    .card.active{opacity:1;transform:translateY(0) scale(1)}
+    .card img{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:1.5rem;-webkit-user-drag:none}
+    .h3{font-size:1.5rem;font-weight:800;margin:0}
+    .designation{font-size:.875rem;color:#666;margin-top:.25rem}
+    .quote{font-size:1.125rem;color:#555;margin-top:2rem;line-height:1.6}
+    .controls{display:flex;gap:1rem;padding-top:3rem}
+    .btn{width:1.75rem;height:1.75rem;border-radius:9999px;background:#f3f3f3;display:inline-flex;
+      align-items:center;justify-content:center;border:none;cursor:pointer;font-weight:700;user-select:none}
+  `;
 
-  const libsReady = (async () => {
-    // React 18 + ReactDOM 18 UMD
-    await loadScript('https://unpkg.com/react@18/umd/react.production.min.js');
-    await loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js');
-    // Framer Motion UMD (exposes window.framerMotion)
-    await loadScript('https://unpkg.com/framer-motion@11/dist/framer-motion.umd.js');
-  })();
-
-  // 2) Styles for the component (Shadow DOM safe)
-  function styleTag() {
-    const css = `
-      :host{display:block}
-      .wrapper{max-width:64rem;margin:0 auto;padding:5rem 1.25rem;box-sizing:border-box;
-        font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";color:#0a0a0a}
-      .grid{display:grid;grid-template-columns:1fr;gap:5rem}
-      @media(min-width:768px){.grid{grid-template-columns:1fr 1fr}}
-      .left{position:relative}
-      .stage{position:relative;width:100%;height:20rem;overflow:visible}
-      .card{position:absolute;inset:0;transform-origin:bottom center}
-      .card img{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:1.5rem;-webkit-user-drag:none}
-      .right{display:flex;flex-direction:column;justify-content:space-between}
-      .h3{font-size:1.5rem;font-weight:800;margin:0;color:#0a0a0a}
-      .designation{font-size:.875rem;color:#666;margin-top:.25rem}
-      .quote{font-size:1.125rem;color:#555;margin-top:2rem;line-height:1.6}
-      .controls{display:flex;gap:1rem;padding-top:3rem}
-      .btn{width:1.75rem;height:1.75rem;border-radius:9999px;background:#f3f3f3;display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;font-weight:700}
-    `;
-    const tag = document.createElement('style');
-    tag.textContent = css;
-    return tag;
-  }
-
-  // 3) Define the custom element
   class AnimatedTestimonialsElement extends HTMLElement {
     static get observedAttributes() { return ['testimonials','autoplay','class']; }
     constructor() {
       super();
-      this.attachShadow({ mode: 'open' });
-      this._container = document.createElement('div');
-      this.shadowRoot.append(styleTag(), this._container);
-      this._root = null;
-      this._ready();
-    }
+      this._active = 0;
+      this._timer = null;
 
-    async _ready() {
-      await libsReady;
-      const React = window.React;
-      const ReactDOM = window.ReactDOM;
-      const { motion, AnimatePresence } = window.framerMotion;
+      const root = this.attachShadow({ mode: 'open' });
+      const style = document.createElement('style'); style.textContent = css;
+      this._wrap = document.createElement('div'); this._wrap.className = 'wrap';
+      root.append(style, this._wrap);
 
-      const { useEffect, useState } = React;
-      const cn = (...xs) => xs.filter(Boolean).join(' ');
-
-      const AnimatedTestimonials = ({ testimonials, autoplay=false, className }) => {
-        const [active, setActive] = useState(0);
-        const next = () => setActive(p => (p + 1) % testimonials.length);
-        const prev = () => setActive(p => (p - 1 + testimonials.length) % testimonials.length);
-        const isActive = (i) => i === active;
-
-        useEffect(() => {
-          if (autoplay) {
-            const id = setInterval(next, 5000);
-            return () => clearInterval(id);
-          }
-        }, [autoplay]);
-
-        const randomRotateY = () => Math.floor(Math.random()*21)-10;
-
-        return React.createElement('div', { className: cn('wrapper', className) },
-          React.createElement('div', { className: 'grid' },
-            React.createElement('div', { className: 'left' },
-              React.createElement('div', { className: 'stage' },
-                React.createElement(AnimatePresence, null,
-                  testimonials.map((t, index) =>
-                    React.createElement(motion.div, {
-                      className:'card', key: t.src + index,
-                      initial:{ opacity:0, scale:0.9, z:-100, rotate: randomRotateY() },
-                      animate:{
-                        opacity: isActive(index)?1:0.7,
-                        scale: isActive(index)?1:0.95,
-                        z: isActive(index)?0:-100,
-                        rotate: isActive(index)?0:randomRotateY(),
-                        zIndex: isActive(index)?999:testimonials.length + 2 - index,
-                        y: isActive(index)?[0,-80,0]:0
-                      },
-                      exit:{ opacity:0, scale:0.9, z:100, rotate: randomRotateY() },
-                      transition:{ duration:0.4, ease:'easeInOut' }
-                    },
-                      React.createElement('img', { src:t.src, alt:t.name, draggable:false })
-                    )
-                  )
-                )
-              )
-            ),
-            React.createElement('div', { className: 'right' },
-              React.createElement(motion.div, {
-                key: 'k'+active,
-                initial:{ y:20, opacity:0 },
-                animate:{ y:0, opacity:1 },
-                exit:{ y:-20, opacity:0 },
-                transition:{ duration:0.2, ease:'easeInOut' }
-              },
-                React.createElement('h3', { className:'h3' }, testimonials[active].name),
-                React.createElement('p', { className:'designation' }, testimonials[active].designation),
-                React.createElement(motion.p, { className:'quote' },
-                  testimonials[active].quote.split(' ').map((w,i) =>
-                    React.createElement(motion.span, {
-                      key:i,
-                      initial:{ filter:'blur(10px)', opacity:0, y:5 },
-                      animate:{ filter:'blur(0px)', opacity:1, y:0 },
-                      transition:{ duration:0.2, ease:'easeInOut', delay: 0.02 * i },
-                      className:'inline-block'
-                    }, w + '\u00A0')
-                  )
-                )
-              ),
-              React.createElement('div', { className:'controls' },
-                React.createElement('button', { className:'btn', onClick: () => prev(), 'aria-label':'Previous' }, '◀'),
-                React.createElement('button', { className:'btn', onClick: () => next(), 'aria-label':'Next' }, '▶')
-              )
-            )
-          )
-        );
-      };
-
-      this._Component = AnimatedTestimonials;
-      this._React = React;
-      this._ReactDOM = ReactDOM;
-      this._render();
+      this._renderSkeleton();
     }
 
     attributeChangedCallback() { this._render(); }
     connectedCallback() { this._render(); }
+    disconnectedCallback() { this._stopAutoplay(); }
 
-    _getProps() {
+    _parse() {
       let testimonials = [];
-      try { testimonials = JSON.parse(this.getAttribute('testimonials') || '[]'); } catch {}
+      try { testimonials = JSON.parse(this.getAttribute('testimonials') || '[]'); }
+      catch(_) { /* ignore */ }
       const autoplay = String(this.getAttribute('autoplay') || 'false').toLowerCase() === 'true';
       const className = this.getAttribute('class') || '';
       return { testimonials, autoplay, className };
     }
 
+    _renderSkeleton() {
+      this._wrap.innerHTML = `
+        <div class="grid">
+          <div>
+            <div class="stage" id="stage"></div>
+          </div>
+          <div>
+            <div id="text"></div>
+            <div class="controls">
+              <button class="btn" id="prev" aria-label="Previous">◀</button>
+              <button class="btn" id="next" aria-label="Next">▶</button>
+            </div>
+          </div>
+        </div>
+      `;
+      this._els = {
+        stage: this._wrap.querySelector('#stage'),
+        text: this._wrap.querySelector('#text'),
+        prev: this._wrap.querySelector('#prev'),
+        next: this._wrap.querySelector('#next'),
+      };
+      this._els.prev.addEventListener('click', () => this._prev());
+      this._els.next.addEventListener('click', () => this._next());
+    }
+
     _render() {
-      if (!this._Component || !this.isConnected) return;
-      const props = this._getProps();
-      if (!Array.isArray(props.testimonials) || props.testimonials.length === 0) {
-        this._container.innerHTML = '<em>Add a `testimonials` JSON array in the element attributes.</em>';
+      const { testimonials, autoplay, className } = this._parse();
+      this._wrap.className = `wrap ${className||''}`.trim();
+
+      if (!Array.isArray(testimonials) || testimonials.length === 0) {
+        this._els.stage.innerHTML = `<em>Add a valid \`testimonials\` JSON array in the element attributes.</em>`;
+        this._els.text.innerHTML = '';
+        this._stopAutoplay();
         return;
       }
-      if (!this._root) this._root = this._ReactDOM.createRoot(this._container);
-      this._root.render(this._React.createElement(this._Component, props));
+
+      // Images
+      if (!this._cards || this._cards.length !== testimonials.length) {
+        this._els.stage.innerHTML = '';
+        this._cards = testimonials.map((t, i) => {
+          const c = document.createElement('div');
+          c.className = 'card' + (i===this._active ? ' active' : '');
+          const img = document.createElement('img');
+          img.src = t.src; img.alt = t.name || 'testimonial';
+          c.appendChild(img);
+          this._els.stage.appendChild(c);
+          return c;
+        });
+      } else {
+        // update src/alt if content changed
+        testimonials.forEach((t, i) => {
+          const img = this._cards[i].querySelector('img');
+          if (img && (img.src !== t.src || img.alt !== (t.name||'testimonial'))) {
+            img.src = t.src; img.alt = t.name || 'testimonial';
+          }
+        });
+      }
+
+      // Text
+      const t = testimonials[this._active];
+      this._els.text.innerHTML = `
+        <h3 class="h3">${escapeHtml(t.name || '')}</h3>
+        <p class="designation">${escapeHtml(t.designation || '')}</p>
+        <p class="quote">${escapeHtml(t.quote || '')}</p>
+      `;
+
+      // Autoplay
+      this._stopAutoplay();
+      if (autoplay) {
+        this._timer = setInterval(() => this._next(), 5000);
+      }
     }
+
+    _show(idx) {
+      if (!this._cards) return;
+      this._cards.forEach((c, i) => c.classList.toggle('active', i === idx));
+    }
+
+    _next() {
+      const { testimonials } = this._parse();
+      if (!testimonials.length) return;
+      this._active = (this._active + 1) % testimonials.length;
+      this._show(this._active);
+      // update text
+      const t = testimonials[this._active];
+      this._els.text.innerHTML = `
+        <h3 class="h3">${escapeHtml(t.name || '')}</h3>
+        <p class="designation">${escapeHtml(t.designation || '')}</p>
+        <p class="quote">${escapeHtml(t.quote || '')}</p>
+      `;
+    }
+
+    _prev() {
+      const { testimonials } = this._parse();
+      if (!testimonials.length) return;
+      this._active = (this._active - 1 + testimonials.length) % testimonials.length;
+      this._show(this._active);
+      // update text
+      const t = testimonials[this._active];
+      this._els.text.innerHTML = `
+        <h3 class="h3">${escapeHtml(t.name || '')}</h3>
+        <p class="designation">${escapeHtml(t.designation || '')}</p>
+        <p class="quote">${escapeHtml(t.quote || '')}</p>
+      `;
+    }
+
+    _stopAutoplay() { if (this._timer) { clearInterval(this._timer); this._timer = null; } }
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s]));
   }
 
   if (!customElements.get('x-animated-testimonials')) {
     customElements.define('x-animated-testimonials', AnimatedTestimonialsElement);
   }
 })();
-
